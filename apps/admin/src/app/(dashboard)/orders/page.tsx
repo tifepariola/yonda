@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getOrders, updateOrderStatus, type Order } from '@/lib/api';
+import { getOrders, updateOrderStatus, markOrderPaid, type Order } from '@/lib/api';
 
 const STATUS_COLOR: Record<string, string> = {
   PENDING_PAYMENT: 'bg-yellow-100 text-yellow-800',
@@ -23,6 +23,9 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [phoneFilter, setPhoneFilter] = useState('');
   const [loading, setLoading] = useState(false);
+  const [markPaidOrderId, setMarkPaidOrderId] = useState<string | null>(null);
+  const [markPaidNote, setMarkPaidNote] = useState('');
+  const [markPaidLoading, setMarkPaidLoading] = useState(false);
 
   async function fetchOrders() {
     setLoading(true);
@@ -47,9 +50,62 @@ export default function OrdersPage() {
     fetchOrders();
   }
 
+  async function handleMarkPaid() {
+    if (!markPaidOrderId) return;
+    setMarkPaidLoading(true);
+    try {
+      await markOrderPaid(markPaidOrderId, markPaidNote || undefined);
+      setMarkPaidOrderId(null);
+      setMarkPaidNote('');
+      fetchOrders();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to mark as paid');
+    } finally {
+      setMarkPaidLoading(false);
+    }
+  }
+
   return (
     <div className="p-8">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Orders</h2>
+
+      {/* Manual payment approval modal */}
+      {markPaidOrderId && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Manual Payment Approval</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Only use this if you&apos;ve confirmed the payment via your bank or Paystack dashboard.
+              The customer will receive a WhatsApp confirmation.
+            </p>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Note (optional)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Confirmed via Paystack dashboard ref: xyz"
+              value={markPaidNote}
+              onChange={(e) => setMarkPaidNote(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { setMarkPaidOrderId(null); setMarkPaidNote(''); }}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMarkPaid}
+                disabled={markPaidLoading}
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {markPaidLoading ? 'Confirming...' : 'Confirm Payment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex gap-3 mb-5">
@@ -120,30 +176,40 @@ export default function OrdersPage() {
                   {new Date(order.createdAt).toLocaleDateString('en-NG')}
                 </td>
                 <td className="px-4 py-3">
-                  {order.status === 'PAID' && (
-                    <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1">
+                    {order.status === 'PENDING_PAYMENT' && (
+                      <button
+                        onClick={() => setMarkPaidOrderId(order.id)}
+                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 font-medium"
+                      >
+                        Mark as Paid
+                      </button>
+                    )}
+                    {order.status === 'PAID' && (
+                      <>
+                        <button
+                          onClick={() => handleStatusUpdate(order.id, 'PROCESSING')}
+                          className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs hover:bg-orange-200"
+                        >
+                          Processing
+                        </button>
+                        <button
+                          onClick={() => handleStatusUpdate(order.id, 'DELIVERED')}
+                          className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200"
+                        >
+                          Delivered
+                        </button>
+                      </>
+                    )}
+                    {order.status === 'PROCESSING' && (
                       <button
                         onClick={() => handleStatusUpdate(order.id, 'DELIVERED')}
                         className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200"
                       >
                         Mark Delivered
                       </button>
-                      <button
-                        onClick={() => handleStatusUpdate(order.id, 'PROCESSING')}
-                        className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs hover:bg-orange-200"
-                      >
-                        Processing
-                      </button>
-                    </div>
-                  )}
-                  {order.status === 'PROCESSING' && (
-                    <button
-                      onClick={() => handleStatusUpdate(order.id, 'DELIVERED')}
-                      className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200"
-                    >
-                      Mark Delivered
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

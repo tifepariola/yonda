@@ -78,6 +78,40 @@ ordersRouter.patch('/:id/status', asyncHandler(async (req: Request, res: Respons
   res.json(updated);
 }));
 
+// PATCH /api/admin/orders/:id/mark-paid — manual payment approval
+// Used when Paystack webhook was missed but payment is confirmed via dashboard/bank.
+ordersRouter.patch('/:id/mark-paid', asyncHandler(async (req: Request, res: Response) => {
+  const { note } = req.body as { note?: string };
+
+  const order = await prisma.order.findUnique({
+    where: { id: req.params.id },
+    include: { user: true },
+  });
+  if (!order) { res.status(404).json({ error: 'Order not found' }); return; }
+  if (order.status !== 'PENDING_PAYMENT') {
+    res.status(409).json({ error: `Cannot mark as paid — order is already ${order.status}` });
+    return;
+  }
+
+  const updated = await prisma.order.update({
+    where: { id: req.params.id },
+    data: {
+      status: 'PAID',
+      paidAt: new Date(),
+      adminNotes: note
+        ? `[Manual payment approval] ${note}`
+        : '[Manual payment approval]',
+    },
+    include: { user: true },
+  });
+
+  // Notify the customer the same way the Paystack webhook would
+  const { notifyPaymentReceived } = await import('../../services/notification');
+  notifyPaymentReceived(updated).catch(() => {});
+
+  res.json({ id: updated.id, status: updated.status, paidAt: updated.paidAt });
+}));
+
 // PATCH /api/admin/orders/:id/notes
 ordersRouter.patch('/:id/notes', asyncHandler(async (req: Request, res: Response) => {
   const { notes } = req.body as { notes?: string };

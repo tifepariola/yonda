@@ -59,6 +59,9 @@ export const getOrders = (params?: { status?: string; phone?: string; page?: num
 export const updateOrderStatus = (id: string, status: string) =>
   api.patch(`/admin/orders/${id}/status`, { status });
 
+export const markOrderPaid = (id: string, note?: string) =>
+  api.patch(`/admin/orders/${id}/mark-paid`, { note });
+
 // KYC
 export const getKycQueue = () => api.get<User[]>('/admin/users/kyc/queue');
 export const approveKyc = (userId: string) =>
