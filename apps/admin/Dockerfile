@@ -2,6 +2,12 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Declare build arg so Railway injects it at build time.
+# NEXT_PUBLIC_* vars are baked into the bundle by Next.js — they must be
+# present during `next build`, not just at runtime.
+ARG NEXT_PUBLIC_API_URL=http://localhost:3000
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 COPY package*.json ./
 COPY apps/admin/package.json ./apps/admin/
 COPY tsconfig.base.json ./
