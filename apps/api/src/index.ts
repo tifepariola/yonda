@@ -12,7 +12,15 @@ const app = express();
 
 // ─── CORS — must be first so preflight OPTIONS requests are handled before
 //     express.json() runs and before any error handler can intercept them. ────
-app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'] }));
+const corsOptions = {
+  origin: '*',
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+// Explicitly handle all preflight OPTIONS requests — this terminates the request
+// with 204 + Access-Control-Allow-Methods before it reaches any route handler.
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
 
 // ─── Raw body capture (required for webhook signature verification) ──────────
 app.use(
