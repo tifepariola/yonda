@@ -28,7 +28,10 @@ RUN apk add --no-cache openssl
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
-COPY --from=builder /app/packages/shared ./packages/shared
+# Copy the compiled JS (not TS source) so the workspace symlink resolves correctly at runtime.
+# tsc outputs packages/shared/src/*.js into apps/api/dist/packages/shared/src/
+COPY --from=builder /app/apps/api/dist/packages/shared/src ./packages/shared/src
+COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
 
 # Run migrations then start the server
 # All deps are hoisted to root node_modules by npm workspaces
