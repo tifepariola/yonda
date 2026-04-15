@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import type { Request, Response, NextFunction } from 'express';
 import getConfig from './config';
 import logger from './lib/logger';
@@ -9,6 +10,10 @@ import { startOrderTimeoutWorker } from './jobs/queue';
 
 const app = express();
 
+// ─── CORS — must be first so preflight OPTIONS requests are handled before
+//     express.json() runs and before any error handler can intercept them. ────
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'] }));
+
 // ─── Raw body capture (required for webhook signature verification) ──────────
 app.use(
   express.json({
@@ -17,20 +22,6 @@ app.use(
     },
   }),
 );
-
-// ─── CORS (admin dashboard) ──────────────────────────────────────────────────
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  // Respond to preflight requests immediately — without this the OPTIONS
-  // request falls through to the 404 handler and the browser blocks the call.
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(204);
-    return;
-  }
-  next();
-});
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
