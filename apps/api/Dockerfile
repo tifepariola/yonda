@@ -36,5 +36,5 @@ COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.
 # Run migrations then start the server
 # All deps are hoisted to root node_modules by npm workspaces
 CMD ["sh", "-c", \
-  "node node_modules/.bin/prisma migrate deploy --schema apps/api/prisma/schema.prisma \
+  "node node_modules/.bin/prisma db push --schema apps/api/prisma/schema.prisma \
   && node apps/api/dist/apps/api/src/index.js"]

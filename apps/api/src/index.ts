@@ -69,7 +69,9 @@ async function start(): Promise<void> {
   process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
-start().catch((err) => {
-  logger.error({ err }, 'Failed to start server');
+start().catch((err: unknown) => {
+  const message = err instanceof Error ? err.message : String(err);
+  // Print plainly so Railway surfaces the actual reason (e.g. missing env vars)
+  console.error('\n❌ Failed to start server:\n', message, '\n');
   process.exit(1);
 });
