@@ -34,4 +34,4 @@ COPY --from=builder /app/packages/shared ./packages/shared
 # All deps are hoisted to root node_modules by npm workspaces
 CMD ["sh", "-c", \
   "node node_modules/.bin/prisma migrate deploy --schema apps/api/prisma/schema.prisma \
-  && node apps/api/dist/index.js"]
+  && node apps/api/dist/apps/api/src/index.js"]
