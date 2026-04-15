@@ -1,0 +1,100 @@
+version: '3.9'
+
+networks:
+  yonda:
+    name: yonda_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+services:
+
+  # ── Database ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks: [yonda]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: yonda
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: yonda_db
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U yonda -d yonda_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Internal only — not exposed to host
+
+  # ── Cache / Sessions ──────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks: [yonda]
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    # Internal only — not exposed to host
+
+  # ── API (Express + WhatsApp bot) ──────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    networks: [yonda]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      APP_URL: https://${API_DOMAIN}
+      DATABASE_URL: postgresql://yonda:${POSTGRES_PASSWORD}@postgres:5432/yonda_db
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      META_WHATSAPP_PHONE_NUMBER_ID: ${META_WHATSAPP_PHONE_NUMBER_ID}
+      META_WHATSAPP_ACCESS_TOKEN: ${META_WHATSAPP_ACCESS_TOKEN}
+      META_WHATSAPP_VERIFY_TOKEN: ${META_WHATSAPP_VERIFY_TOKEN}
+      META_WHATSAPP_APP_SECRET: ${META_WHATSAPP_APP_SECRET}
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: 8h
+      ADMIN_DASHBOARD_URL: https://${ADMIN_DOMAIN}
+      MIN_CNY_AMOUNT: 100
+      MAX_CNY_AMOUNT: 50000
+      PAYMENT_LINK_TTL_HOURS: 2
+      SESSION_TTL_SECONDS: 86400
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.yonda-api.rule=Host(`${API_DOMAIN}`)
+      - traefik.http.routers.yonda-api.entrypoints=websecure
+      - traefik.http.routers.yonda-api.tls.certresolver=letsencrypt
+      - traefik.http.services.yonda-api.loadbalancer.server.port=3000
+
+  # ── Admin Dashboard (Next.js) ─────────────────────────────────────────────
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    restart: unless-stopped
+    networks: [yonda]
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.yonda-admin.rule=Host(`${ADMIN_DOMAIN}`)
+      - traefik.http.routers.yonda-admin.entrypoints=websecure
+      - traefik.http.routers.yonda-admin.tls.certresolver=letsencrypt
+      - traefik.http.services.yonda-admin.loadbalancer.server.port=3001

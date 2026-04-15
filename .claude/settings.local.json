@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx prisma:*)",
+      "Bash(xargs sed:*)",
+      "Bash(grep -v \"^$\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(echo \"TS exit: $?\")"
+    ]
+  }
+}

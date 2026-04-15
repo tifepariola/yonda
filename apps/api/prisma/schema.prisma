@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum KycStatus {
+  PENDING
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  DELIVERED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum DeliveryType {
+  ALIPAY
+  WECHAT_PAY
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id                 String     @id @default(cuid())
+  whatsappPhone      String     @unique // E.164 format: +2348012345678
+  name               String?
+  bvn                String?    // AES-256-GCM encrypted
+  kycStatus          KycStatus  @default(PENDING)
+  kycReviewedAt      DateTime?
+  kycReviewedBy      String?    // AdminUser.id
+  kycRejectionReason String?
+  isBlocked          Boolean    @default(false)
+
+  orders             Order[]
+  session            BotSession?
+
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([whatsappPhone])
+  @@index([kycStatus])
+}
+
+model Order {
+  id                String       @id @default(cuid())
+  orderRef          String       @unique @default(cuid())
+
+  userId            String
+  user              User         @relation(fields: [userId], references: [id])
+
+  ngnAmount         Decimal      @db.Decimal(18, 2)
+  cnyAmount         Decimal      @db.Decimal(18, 4)
+
+  fxRateId          String
+  fxRate            FxRate       @relation(fields: [fxRateId], references: [id])
+  exchangeRate      Decimal      @db.Decimal(18, 6)
+  marginRate        Decimal      @db.Decimal(5, 4)
+
+  deliveryType      DeliveryType
+  deliveryAccountId String
+
+  paystackRef       String?      @unique
+  paystackLink      String?
+  paidAt            DateTime?
+
+  status            OrderStatus  @default(PENDING_PAYMENT)
+  deliveredAt       DateTime?
+  adminNotes        String?
+
+  paymentExpiresAt  DateTime
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([paystackRef])
+  @@index([orderRef])
+}
+
+model FxRate {
+  id                     String    @id @default(cuid())
+
+  // Base rate: how many NGN per 1 CNY (e.g. 220.5)
+  baseRateCnyToNgn       Decimal   @db.Decimal(18, 6)
+
+  // Margin as a decimal fraction (e.g. 0.05 = 5%)
+  marginPercent          Decimal   @db.Decimal(5, 4)
+
+  // Denormalized: baseRateCnyToNgn * (1 + marginPercent)
+  effectiveRateCnyToNgn  Decimal   @db.Decimal(18, 6)
+
+  isActive               Boolean   @default(false)
+  setByAdminId           String?
+
+  orders                 Order[]
+
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@index([isActive])
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// Live session data lives in Redis. This model is an audit log of the last
+// known state, used for support and fallback recovery.
+model BotSession {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  state     String
+  context   Json     @default("{}")
+
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
