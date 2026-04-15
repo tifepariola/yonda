@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import bcrypt from 'bcrypt';
+import prisma from '../lib/prisma';
 import { whatsappWebhookRouter } from './webhooks/whatsapp';
 import { paystackWebhookRouter } from './webhooks/paystack';
 import { authRouter } from './admin/auth';
@@ -20,8 +22,6 @@ apiRouter.use('/admin/kyc', usersRouter); // re-use users router — KYC routes 
 apiRouter.use('/admin/rates', ratesRouter);
 
 // TEMPORARY — remove after seeding
-import bcrypt from 'bcrypt';
-import { prisma } from 'src/lib/prisma';
 apiRouter.get('/seed', async (_req, res) => {
   const hash = await bcrypt.hash('changeme123', 12);
   await prisma.adminUser.upsert({
