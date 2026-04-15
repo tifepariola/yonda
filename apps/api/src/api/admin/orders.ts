@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { requireAdmin } from './middleware';
+import { asyncHandler } from '../../lib/asyncHandler';
 
 export const ordersRouter = Router();
 ordersRouter.use(requireAdmin);
 
 // GET /api/admin/orders
-ordersRouter.get('/', async (req: Request, res: Response) => {
+ordersRouter.get('/', asyncHandler(async (req: Request, res: Response) => {
   const { status, phone, page = '1', limit = '20' } = req.query as Record<string, string>;
 
   const where: Prisma.OrderWhereInput = {};
@@ -33,24 +34,24 @@ ordersRouter.get('/', async (req: Request, res: Response) => {
   ]);
 
   res.json({ orders, total, page: pageNum, pages: Math.ceil(total / take) });
-});
+}));
 
 // GET /api/admin/orders/:id
-ordersRouter.get('/:id', async (req: Request, res: Response) => {
+ordersRouter.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const order = await prisma.order.findUnique({
     where: { id: req.params.id },
     include: { user: true, fxRate: true },
   });
   if (!order) { res.status(404).json({ error: 'Order not found' }); return; }
   res.json(order);
-});
+}));
 
 // PATCH /api/admin/orders/:id/status
 const updateStatusSchema = z.object({
   status: z.enum(['PROCESSING', 'DELIVERED', 'FAILED', 'REFUNDED', 'CANCELLED']),
 });
 
-ordersRouter.patch('/:id/status', async (req: Request, res: Response) => {
+ordersRouter.patch('/:id/status', asyncHandler(async (req: Request, res: Response) => {
   const parsed = updateStatusSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
 
@@ -75,10 +76,10 @@ ordersRouter.patch('/:id/status', async (req: Request, res: Response) => {
   }
 
   res.json(updated);
-});
+}));
 
 // PATCH /api/admin/orders/:id/notes
-ordersRouter.patch('/:id/notes', async (req: Request, res: Response) => {
+ordersRouter.patch('/:id/notes', asyncHandler(async (req: Request, res: Response) => {
   const { notes } = req.body as { notes?: string };
   if (typeof notes !== 'string') { res.status(400).json({ error: 'notes required' }); return; }
 
@@ -87,4 +88,4 @@ ordersRouter.patch('/:id/notes', async (req: Request, res: Response) => {
     data: { adminNotes: notes },
   });
   res.json(updated);
-});
+}));
