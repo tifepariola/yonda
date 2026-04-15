@@ -56,7 +56,7 @@ export default function DashboardPage() {
         <div className="col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900">Recent Orders</h3>
-            <Link href="/dashboard/orders" className="text-sm text-brand-600 hover:underline">
+            <Link href="/orders" className="text-sm text-brand-600 hover:underline">
               View all →
             </Link>
           </div>
@@ -88,7 +88,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900">KYC Queue</h3>
-            <Link href="/dashboard/kyc" className="text-sm text-brand-600 hover:underline">
+            <Link href="/kyc" className="text-sm text-brand-600 hover:underline">
               Review →
             </Link>
           </div>

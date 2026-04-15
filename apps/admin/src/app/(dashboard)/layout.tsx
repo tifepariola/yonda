@@ -6,10 +6,10 @@ import { useEffect } from 'react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/dashboard/orders', label: 'Orders', icon: '💱' },
-  { href: '/dashboard/kyc', label: 'KYC Queue', icon: '🪪' },
-  { href: '/dashboard/rates', label: 'FX Rates', icon: '📈' },
-  { href: '/dashboard/users', label: 'Users', icon: '👥' },
+  { href: '/orders', label: 'Orders', icon: '💱' },
+  { href: '/kyc', label: 'KYC Queue', icon: '🪪' },
+  { href: '/rates', label: 'FX Rates', icon: '📈' },
+  { href: '/users', label: 'Users', icon: '👥' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
