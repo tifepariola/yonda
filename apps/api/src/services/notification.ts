@@ -3,15 +3,20 @@
  * (Paystack webhooks, admin actions, etc.)
  */
 import { sendTextMessage, sendInteractiveButtons } from './whatsapp';
-import { formatOrderRef } from '@yonda/shared';
+import { ConversationState, formatOrderRef } from '@yonda/shared';
 import type { Order, User } from '@prisma/client';
+import { saveSession } from '../bot/session';
 
 type OrderWithUser = Order & { user: User };
 
 export async function notifyPaymentReceived(order: OrderWithUser): Promise<void> {
   const ref = formatOrderRef(order.id);
   const deliveryLabel = order.deliveryType === 'ALIPAY' ? 'Alipay' : 'WeChat Pay';
-
+  await saveSession(order.user.whatsappPhone, {
+    state: ConversationState.IDLE,
+    context: {},
+    lastActivityAt: new Date().toISOString(),
+  });
   await sendTextMessage(
     order.user.whatsappPhone,
     `✅ *Payment Received!*\n\n` +
