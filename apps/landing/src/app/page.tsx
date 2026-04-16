@@ -136,27 +136,27 @@ function ChatPreview() {
 
       {/* Messages */}
       <div className="px-4 py-5 space-y-3 text-sm">
-        <div className="flex justify-start">
+        <div className="flex justify-start text-left">
           <div className="chat-bubble-kai text-white/90 px-4 py-2.5 max-w-[85%] leading-relaxed">
             Hi, I'm Kai. I help you buy Chinese Yuan with Naira. How much RMB do you need?
           </div>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end text-right">
           <div className="chat-bubble-user text-white px-4 py-2.5 max-w-[80%] leading-relaxed">
             I need ¥2,000 to my Alipay
           </div>
         </div>
-        <div className="flex justify-start">
+        <div className="flex justify-start text-left">
           <div className="chat-bubble-kai text-white/90 px-4 py-2.5 max-w-[85%] leading-relaxed">
             Got it. ¥2,000 RMB at today's rate comes to ₦462,000. What's your Alipay account?
           </div>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end text-right">
           <div className="chat-bubble-user text-white px-4 py-2.5 max-w-[80%] leading-relaxed">
             +86 138 0013 8000
           </div>
         </div>
-        <div className="flex justify-start">
+        <div className="flex justify-start text-left">
           <div className="chat-bubble-kai text-white/90 px-4 py-2.5 max-w-[85%] leading-relaxed">
             Perfect. Tap below to confirm and pay — your yuan will be delivered within 30 minutes.
           </div>
