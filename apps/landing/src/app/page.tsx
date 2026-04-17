@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-
+import Image from 'next/image';
+import YondaLogo from './yonda.png';
 const WHATSAPP_LINK = 'https://wa.me/2348065471334';
 const QR_URL =
   'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fwa.me%2F2348065471334&color=1E2A38&bgcolor=ffffff&margin=10&qzone=2';
@@ -32,7 +33,8 @@ function Nav() {
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 md:px-12"
       style={{ background: 'rgba(30,42,56,0.92)', backdropFilter: 'blur(12px)' }}>
       <div className="flex items-center gap-2">
-        <span className="text-white font-bold text-xl tracking-tight">Yonda</span>
+        <Image src={YondaLogo} alt="Yonda" className="h-10 w-auto" />
+   
       </div>
       <a
         href={WHATSAPP_LINK}
@@ -129,7 +131,7 @@ function ChatPreview() {
           K
         </div>
         <div className="text-left">
-          <p className="text-white text-sm font-semibold leading-none">Kai · Yonda</p>
+          <p className="text-white text-sm font-semibold leading-none">Kai by Yonda</p>
           <p className="text-green-400 text-xs mt-0.5">online</p>
         </div>
       </div>
