@@ -4,6 +4,7 @@ import logger from '../../lib/logger';
 import { verifyHmacSha512 } from '../../lib/crypto';
 import prisma from '../../lib/prisma';
 import { notifyPaymentReceived } from '../../services/notification';
+import { saveSession, idleSession } from '../../bot/session';
 import type { PaystackWebhookPayload } from '../../types/paystack';
 
 export const paystackWebhookRouter = Router();
@@ -75,6 +76,8 @@ async function handleChargeSuccess(payload: PaystackWebhookPayload): Promise<voi
         adminNotes: `AMOUNT MISMATCH: paid ₦${paidNgn}, expected ₦${expectedNgn}`,
       },
     });
+    // Still reset the session — user is done paying either way
+    await saveSession(order.user.whatsappPhone, idleSession(order.user.id));
     return;
   }
 
@@ -84,6 +87,9 @@ async function handleChargeSuccess(payload: PaystackWebhookPayload): Promise<voi
   });
 
   logger.info({ orderId: order.id, reference }, 'Order marked as PAID');
+
+  // Reset bot session to IDLE so user isn't stuck in BUY_AWAITING_PAYMENT
+  await saveSession(order.user.whatsappPhone, idleSession(order.user.id));
 
   // Notify user via WhatsApp
   await notifyPaymentReceived(order);

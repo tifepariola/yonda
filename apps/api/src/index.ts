@@ -35,6 +35,89 @@ app.use(
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 app.use('/api', apiRouter);
 
+// ─── Paystack payment callback ────────────────────────────────────────────────
+// Paystack redirects here after the user completes payment on their hosted page.
+// The actual order state update happens via webhook (async). This page just
+// reassures the user and tells them to check WhatsApp.
+app.get('/payment/success', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/html');
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Received — Yonda</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f9fafb;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px 32px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .icon {
+      font-size: 52px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 12px;
+    }
+    p {
+      font-size: 15px;
+      color: #6b7280;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .highlight {
+      color: #111827;
+      font-weight: 600;
+    }
+    .whatsapp-note {
+      margin-top: 28px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 14px;
+      color: #166534;
+    }
+    .brand {
+      margin-top: 32px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">✅</div>
+    <h1>Payment received</h1>
+    <p>Your payment has gone through successfully.</p>
+    <p>We're processing your <span class="highlight">RMB order</span> now.</p>
+    <div class="whatsapp-note">
+      Check your <strong>WhatsApp</strong> — Kai will send you a confirmation and delivery update shortly.
+    </div>
+    <p class="brand">Yonda · China payments made easy</p>
+  </div>
+</body>
+</html>`);
+});
+
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Not found' });
