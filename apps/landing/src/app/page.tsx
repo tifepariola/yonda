@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import YondaLogo from './yonda.png';
+import YondaLogo from './logo.png';
+import BannerImage from './banner.jpg';
 const WHATSAPP_LINK = 'https://wa.me/2348065471334';
 const QR_URL =
   'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fwa.me%2F2348065471334&color=1E2A38&bgcolor=ffffff&margin=10&qzone=2';
@@ -31,7 +32,7 @@ function useScrollReveal() {
 function Nav() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 md:px-12"
-      style={{ background: 'rgba(30,42,56,0.92)', backdropFilter: 'blur(12px)' }}>
+      style={{ background: '#f5fff9', backdropFilter: 'blur(12px)' }}>
       <div className="flex items-center gap-2">
         <Image src={YondaLogo} alt="Yonda" className="h-10 w-auto" />
    
@@ -40,7 +41,7 @@ function Nav() {
         href={WHATSAPP_LINK}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2 bg-white text-navy font-semibold text-sm px-4 py-2 rounded-full hover:bg-gray-100 transition-colors"
+        className="flex items-center gap-2 bg-navy text-white font-semibold text-sm px-4 py-2 rounded-full hover:bg-navy/80 transition-colors"
       >
         <WhatsAppIcon className="w-4 h-4" />
         Talk to Kai
@@ -53,8 +54,8 @@ function Nav() {
 function Hero() {
   return (
     <section
-      className="grain relative min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-20 overflow-hidden"
-      style={{ background: '#1E2A38' }}
+      className="grain relative z-10 min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-32 md:pb-40 overflow-hidden"
+      style={{ background: '#f5fff9' }}
     >
       {/* Background glow */}
       <div
@@ -64,25 +65,25 @@ function Hero() {
 
       <div className="relative max-w-4xl mx-auto text-center">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-8 text-white/80 text-sm font-medium">
+        <div className="inline-flex items-center gap-2 bg-navy/10 border border-navy/20 rounded-full px-4 py-1.5 mb-8 text-navy/80 text-sm font-medium">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
           Now live — try it free
         </div>
 
         {/* Headline */}
-        <h1 className="text-5xl md:text-7xl font-black text-white leading-[1.05] tracking-tight mb-6">
+        <h1 className="text-5xl md:text-7xl font-black text-navy leading-[1.05] tracking-tight mb-6">
           China payments,{' '}
           <span className="relative inline-block">
             <span className="relative z-10">sorted.</span>
             <span
-              className="absolute inset-x-0 bottom-1 h-3 -z-10 opacity-40 rounded"
-              style={{ background: '#4a9eff' }}
+              className="absolute inset-x-0 bottom-1 h-3 -z-10 opacity-40 bg-navy/50 rounded"
+              // style={{ background: '#4a9eff' }}
             />
           </span>
         </h1>
 
         {/* Subheadline */}
-        <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed mb-12">
+        <p className="text-md md:text-lg text-navy/70 max-w-2xl mx-auto leading-relaxed mb-12">
           Buy Chinese Yuan with Naira and get it delivered straight to your Alipay or WeChat Pay
           — in minutes, right from WhatsApp. No bank visits. No stress.
         </p>
@@ -93,14 +94,14 @@ function Hero() {
             href={WHATSAPP_LINK}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 bg-white text-navy font-bold text-base px-8 py-4 rounded-full hover:bg-gray-100 transition-all hover:scale-105 shadow-lg"
+            className="flex items-center gap-3 bg-navy text-white font-bold text-base px-8 py-4 rounded-full hover:bg-navy/80 transition-all hover:scale-105 shadow-lg"
           >
             <WhatsAppIcon className="w-5 h-5 text-green-600" />
             Talk to Kai on WhatsApp
           </a>
           <a
             href="#how-it-works"
-            className="text-white/60 text-sm font-medium hover:text-white/90 transition-colors flex items-center gap-1"
+            className="text-navy/60 text-sm font-medium hover:text-navy/90 transition-colors flex items-center gap-1"
           >
             See how it works
             <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
@@ -109,10 +110,64 @@ function Hero() {
           </a>
         </div>
 
-        {/* Chat preview */}
+        {/* Chat preview
         <div className="mt-20 max-w-sm mx-auto">
           <ChatPreview />
-        </div>
+        </div> */}
+      </div>
+    </section>
+  );
+}
+
+function Banner() {
+  const rafRef = useRef<number>(0);
+  const [scrollLift, setScrollLift] = useState(0);
+  const [overlapBasePx, setOverlapBasePx] = useState(-96);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const syncBase = () => setOverlapBasePx(mq.matches ? -144 : -96);
+    syncBase();
+    mq.addEventListener('change', syncBase);
+    return () => mq.removeEventListener('change', syncBase);
+  }, []);
+
+  useEffect(() => {
+    const update = () => {
+      const y = window.scrollY;
+      // Pull banner further up over the hero as the user scrolls (capped for stability).
+      setScrollLift(Math.min(y * 0.22, 72));
+    };
+    const onScroll = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  return (
+    <section
+      className="relative z-20"
+      style={{
+        // Use margin (not translateY): transforms don't change layout height, which left a
+        // strip of background below the image. Extra lift from scroll stays in normal flow.
+        marginTop: `${overlapBasePx - scrollLift}px`,
+        background: '#f5fff9',
+      }}
+    >
+      <div className="overflow-hidden rounded-t-3xl">
+        <Image
+          src={BannerImage}
+          alt="Yonda"
+          className="w-full h-auto"
+          sizes="(max-width: 1200px) 100vw, 1152px"
+          priority
+        />
       </div>
     </section>
   );
@@ -258,7 +313,7 @@ function HowItWorks() {
             >
               <div className="bg-cream rounded-3xl p-8 h-full hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4 mb-6">
-                  <span className="text-5xl font-black text-navy/10 leading-none">{step.number}</span>
+                  <span className="text-5xl font-black text-navy/10 leading-none flex-1">{step.number}</span>
                   <div className="w-10 h-10 rounded-2xl bg-navy flex items-center justify-center text-white flex-shrink-0">
                     {step.icon}
                   </div>
@@ -554,6 +609,7 @@ export default function Page() {
     <main>
       <Nav />
       <Hero />
+      <Banner />
       <TrustBar />
       <HowItWorks />
       <WhyYonda />
