@@ -15,6 +15,11 @@ const configSchema = z.object({
 
   PAYSTACK_SECRET_KEY: z.string().min(1),
 
+  NOMBA_CLIENT_ID: z.string().optional(),
+  NOMBA_CLIENT_SECRET: z.string().optional(),
+  NOMBA_ACCOUNT_ID: z.string().optional(),
+  NOMBA_WEBHOOK_SECRET: z.string().optional(),
+
   ENCRYPTION_KEY: z.string().length(64),
 
   JWT_SECRET: z.string().min(32),

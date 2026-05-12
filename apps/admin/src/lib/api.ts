@@ -79,6 +79,12 @@ export const getRateHistory = () =>
 export const createRate = (baseRateCnyToNgn: number, marginPercent: number) =>
   api.post<FxRate>('/admin/rates', { baseRateCnyToNgn, marginPercent });
 
+// Settings
+export const getSettings = () =>
+  api.get<{ paymentGateway: string }>('/admin/settings');
+export const updateSettings = (paymentGateway: 'paystack' | 'nomba') =>
+  api.patch<{ paymentGateway: string }>('/admin/settings', { paymentGateway });
+
 // Users
 export const getUsers = (params?: { kycStatus?: string; phone?: string }) => {
   const qs = new URLSearchParams();

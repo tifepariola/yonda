@@ -10,6 +10,7 @@ const navItems = [
   { href: '/kyc', label: 'KYC Queue', icon: '🪪' },
   { href: '/rates', label: 'FX Rates', icon: '📈' },
   { href: '/users', label: 'Users', icon: '👥' },
+  { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -73,8 +73,14 @@ model Order {
   deliveryType      DeliveryType
   deliveryAccountId String
 
+  paymentGateway    String       @default("paystack") // "paystack" | "nomba"
+
   paystackRef       String?      @unique
   paystackLink      String?
+
+  nombaOrderRef     String?      @unique
+  nombaCheckoutLink String?
+
   paidAt            DateTime?
 
   status            OrderStatus  @default(PENDING_PAYMENT)
@@ -89,7 +95,14 @@ model Order {
   @@index([userId])
   @@index([status])
   @@index([paystackRef])
+  @@index([nombaOrderRef])
   @@index([orderRef])
+}
+
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 model FxRate {

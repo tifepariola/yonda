@@ -1,7 +1,7 @@
 import prisma from '../../lib/prisma';
 import { ConversationState, DeliveryType, formatOrderRef } from '@yonda/shared';
 import { calculateQuote } from '../../services/fx';
-import { createPaymentLink } from '../../services/paystack';
+import { createPayment } from '../../services/payment';
 import { getOrderTimeoutQueue } from '../../jobs/queue';
 import getConfig from '../../config';
 import type { StateHandler, StateResult } from './index';
@@ -279,8 +279,8 @@ export const handleBuyConfirmQuote: StateHandler = async (
     },
   });
 
-  // Generate Paystack payment link
-  const { authorizationUrl, reference } = await createPaymentLink({
+  // Generate payment link via active gateway
+  const payment = await createPayment({
     orderId: order.id,
     userId: user.id,
     ngnAmount: freshQuote.ngnAmount,
@@ -288,10 +288,15 @@ export const handleBuyConfirmQuote: StateHandler = async (
     phone,
   });
 
-  // Store payment link on order
+  // Store payment link and gateway reference on order
   await prisma.order.update({
     where: { id: order.id },
-    data: { paystackRef: reference, paystackLink: authorizationUrl },
+    data: {
+      paymentGateway: payment.gateway,
+      ...(payment.gateway === 'paystack'
+        ? { paystackRef: payment.reference, paystackLink: payment.checkoutUrl }
+        : { nombaOrderRef: payment.reference, nombaCheckoutLink: payment.checkoutUrl }),
+    },
   });
 
   // Queue timeout job
@@ -314,6 +319,6 @@ export const handleBuyConfirmQuote: StateHandler = async (
       deliveryType: undefined,
       deliveryAccountId: undefined,
     },
-    messages: [paymentLinkMsg(phone, orderRef, freshQuote.ngnAmount, freshQuote.cnyAmount, authorizationUrl)],
+    messages: [paymentLinkMsg(phone, orderRef, freshQuote.ngnAmount, freshQuote.cnyAmount, payment.checkoutUrl)],
   };
 };
