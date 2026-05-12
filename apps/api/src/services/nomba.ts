@@ -2,11 +2,9 @@ import getConfig from '../config';
 import logger from '../lib/logger';
 import type {
   NombaTokenResponse,
-  NombaCreateOrderRequest,
   NombaCreateOrderResponse,
 } from '../types/nomba';
 
-// Use sandbox in development, production otherwise
 function getBaseUrl(): string {
   const config = getConfig();
   return config.NODE_ENV === 'production'
@@ -27,14 +25,16 @@ async function getAccessToken(): Promise<string> {
     throw new Error('Nomba credentials not configured (NOMBA_CLIENT_ID, NOMBA_CLIENT_SECRET, NOMBA_ACCOUNT_ID)');
   }
 
-  const res = await fetch(`${getBaseUrl()}/v1/auth/token`, {
+  const res = await fetch(`${getBaseUrl()}/v1/auth/token/issue`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'accountId': config.NOMBA_ACCOUNT_ID,
+    },
     body: JSON.stringify({
       grant_type: 'client_credentials',
       client_id: config.NOMBA_CLIENT_ID,
       client_secret: config.NOMBA_CLIENT_SECRET,
-      account_id: config.NOMBA_ACCOUNT_ID,
     }),
   });
 
@@ -44,7 +44,6 @@ async function getAccessToken(): Promise<string> {
     throw new Error(`Nomba auth error: ${json.description ?? res.status}`);
   }
 
-  // Cache with 60s buffer before actual expiry
   cachedToken = {
     value: json.data.access_token,
     expiresAt: Date.now() + (json.data.expires_in - 60) * 1000,
@@ -62,7 +61,7 @@ async function call<T>(method: 'GET' | 'POST', path: string, body?: object): Pro
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
-      ...(config.NOMBA_ACCOUNT_ID ? { 'accountId': config.NOMBA_ACCOUNT_ID } : {}),
+      'accountId': config.NOMBA_ACCOUNT_ID!,
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
@@ -90,21 +89,19 @@ export async function createNombaCheckout(params: {
   callbackUrl?: string;
 }): Promise<NombaPaymentLink> {
   const { orderId, userId, ngnAmount, orderReference, phone, callbackUrl } = params;
+  const config = getConfig();
 
-  const body: NombaCreateOrderRequest = {
-    orderReference,
-    customerId: phone.replace('+', ''),
-    amount: ngnAmount,
-    currency: 'NGN',
-    ...(callbackUrl ? { callbackUrl } : {}),
-    metadata: {
-      orderId,
-      userId,
-      phone,
+  const result = await call<NombaCreateOrderResponse>('POST', '/v1/checkout/order', {
+    order: {
+      orderReference,
+      customerId: phone.replace('+', ''),
+      customerEmail: `${phone.replace('+', '')}@yonda.pay`,
+      amount: ngnAmount,
+      currency: 'NGN',
+      callbackUrl: callbackUrl ?? `${config.APP_URL}/payment/success`,
+      orderMetaData: { orderId, userId, phone },
     },
-  };
-
-  const result = await call<NombaCreateOrderResponse>('POST', '/v1/checkout/order', body);
+  });
 
   return {
     checkoutLink: result.data.checkoutLink,

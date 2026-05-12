@@ -10,15 +10,16 @@ export interface NombaTokenResponse {
 }
 
 export interface NombaCreateOrderRequest {
-  orderReference: string;
-  customerId: string;
-  callbackUrl?: string;
-  customerEmail?: string;
-  customerName?: string;
-  amount: number; // in Naira (NGN)
-  currency: string; // "NGN"
-  paymentMethods?: string[];
-  metadata?: Record<string, string>;
+  order: {
+    orderReference?: string;
+    customerId?: string;
+    callbackUrl: string;
+    customerEmail: string;
+    amount: number; // in Naira (NGN)
+    currency: string; // "NGN"
+    allowedPaymentMethods?: string[];
+    orderMetaData?: Record<string, string>;
+  };
 }
 
 export interface NombaCreateOrderResponse {
